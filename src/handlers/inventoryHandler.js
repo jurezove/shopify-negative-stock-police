@@ -11,9 +11,24 @@ export async function handleInventoryUpdate(webhookData, shop) {
     console.log('📋 [Handler] Starting inventory update processing...');
     console.log('📋 [Handler] Webhook data:', JSON.stringify(webhookData, null, 2));
 
+    // Handle test webhooks or empty data
+    if (!webhookData || webhookData === null) {
+      console.log('ℹ️  [Handler] Received test webhook with null data - ignoring');
+      return;
+    }
+
     const inventoryItemId = webhookData.inventory_item_id;
     const locationId = webhookData.location_id;
     const available = webhookData.available;
+    
+    // Validate required fields
+    if (!inventoryItemId || locationId === undefined || available === undefined) {
+      console.warn('⚠️  [Handler] Missing required fields in webhook data');
+      console.warn('⚠️  [Handler] inventoryItemId:', inventoryItemId);
+      console.warn('⚠️  [Handler] locationId:', locationId);
+      console.warn('⚠️  [Handler] available:', available);
+      return;
+    }
     
     console.log('📋 [Handler] Extracted data:', { inventoryItemId, locationId, available });
 
