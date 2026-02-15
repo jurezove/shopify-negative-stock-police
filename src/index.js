@@ -123,8 +123,14 @@ app.listen(PORT, () => {
   if (!process.env.SLACK_WEBHOOK_URL) {
     warnings.push('SLACK_WEBHOOK_URL');
   }
-  if (!process.env.SHOPIFY_ADMIN_API_TOKEN) {
-    warnings.push('SHOPIFY_ADMIN_API_TOKEN');
+  if (!process.env.SHOPIFY_CLIENT_ID) {
+    warnings.push('SHOPIFY_CLIENT_ID');
+  }
+  if (!process.env.SHOPIFY_CLIENT_SECRET) {
+    warnings.push('SHOPIFY_CLIENT_SECRET');
+  }
+  if (!process.env.SHOPIFY_SHOP) {
+    warnings.push('SHOPIFY_SHOP');
   }
   if (!process.env.SHOPIFY_STORE_DOMAIN) {
     warnings.push('SHOPIFY_STORE_DOMAIN');

@@ -1,4 +1,5 @@
 import fetch from 'node-fetch';
+import { tokenManager } from './tokenManager.js';
 
 /**
  * Fetch product and variant details from Shopify Admin API
@@ -9,14 +10,16 @@ export async function getProductDetails(inventoryItemId) {
   console.log('🔌 [Shopify API] Getting product details for inventory item:', inventoryItemId);
   
   const storeDomain = process.env.SHOPIFY_STORE_DOMAIN;
-  const accessToken = process.env.SHOPIFY_ADMIN_API_TOKEN;
 
-  if (!storeDomain || !accessToken) {
-    console.error('❌ [Shopify API] Missing credentials');
-    throw new Error('Shopify credentials not configured');
+  if (!storeDomain) {
+    console.error('❌ [Shopify API] Missing SHOPIFY_STORE_DOMAIN');
+    throw new Error('SHOPIFY_STORE_DOMAIN not configured');
   }
 
   try {
+    // Get access token from token manager
+    const accessToken = await tokenManager.getToken();
+
     // GraphQL query to get product and variant details by inventory item ID
     const query = `
       query getInventoryItem($id: ID!) {
@@ -63,6 +66,14 @@ export async function getProductDetails(inventoryItemId) {
 
     if (data.errors) {
       console.error('❌ [Shopify API] GraphQL errors:', data.errors);
+      
+      // If token is invalid, clear it and retry once
+      if (data.errors.some(e => e.message.includes('Invalid API key') || e.message.includes('access token'))) {
+        console.log('🔄 [Shopify API] Token may be invalid, clearing cache and retrying...');
+        tokenManager.clearToken();
+        // Don't retry here to avoid infinite loop - let caller handle
+      }
+      
       throw new Error('Failed to fetch product details from Shopify');
     }
 
@@ -104,14 +115,16 @@ export async function getLocationName(locationId) {
   console.log('🔌 [Shopify API] Getting location name for:', locationId);
   
   const storeDomain = process.env.SHOPIFY_STORE_DOMAIN;
-  const accessToken = process.env.SHOPIFY_ADMIN_API_TOKEN;
 
-  if (!storeDomain || !accessToken) {
-    console.error('❌ [Shopify API] Missing credentials');
-    throw new Error('Shopify credentials not configured');
+  if (!storeDomain) {
+    console.error('❌ [Shopify API] Missing SHOPIFY_STORE_DOMAIN');
+    throw new Error('SHOPIFY_STORE_DOMAIN not configured');
   }
 
   try {
+    // Get access token from token manager
+    const accessToken = await tokenManager.getToken();
+
     const query = `
       query getLocation($id: ID!) {
         location(id: $id) {
