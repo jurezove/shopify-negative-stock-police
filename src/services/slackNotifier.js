@@ -36,13 +36,13 @@ export async function sendNegativeStockAlert(params) {
 
   // Build the Slack message
   const message = {
-    text: '🚨 *NEGATIVE STOCK ALERT*',
+    text: '🚨 *Negative Stock Police is on the chase!*',
     blocks: [
       {
         type: 'header',
         text: {
           type: 'plain_text',
-          text: '🚨 Negative Stock Alert',
+          text: '🚨 Negative Stock Police is on the chase!',
           emoji: true,
         },
       },

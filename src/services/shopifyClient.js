@@ -89,11 +89,18 @@ export async function getProductDetails(inventoryItemId) {
     const variant = inventoryItem.variant;
     const product = variant.product;
 
+    // Extract numeric product ID from GraphQL ID (e.g., gid://shopify/Product/123456 -> 123456)
+    const productNumericId = product.id.split('/').pop();
+    const variantNumericId = variant.id.split('/').pop();
+    
+    // Build admin URL for the product variant
+    const adminUrl = `https://${storeDomain}/admin/products/${productNumericId}/variants/${variantNumericId}`;
+    
     return {
       productId: product.id,
       productTitle: product.title,
       productHandle: product.handle,
-      productUrl: product.onlineStoreUrl || `https://${storeDomain}/products/${product.handle}`,
+      productUrl: adminUrl,
       variantId: variant.id,
       variantTitle: variant.title,
       variantDisplayName: variant.displayName,
