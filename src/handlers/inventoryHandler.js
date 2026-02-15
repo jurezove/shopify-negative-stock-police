@@ -8,30 +8,38 @@ import { sendNegativeStockAlert } from '../services/slackNotifier.js';
  */
 export async function handleInventoryUpdate(webhookData, shop) {
   try {
-    console.log('Processing inventory update:', JSON.stringify(webhookData, null, 2));
+    console.log('📋 [Handler] Starting inventory update processing...');
+    console.log('📋 [Handler] Webhook data:', JSON.stringify(webhookData, null, 2));
 
     const inventoryItemId = webhookData.inventory_item_id;
     const locationId = webhookData.location_id;
     const available = webhookData.available;
+    
+    console.log('📋 [Handler] Extracted data:', { inventoryItemId, locationId, available });
 
     // Only alert if inventory is negative
     if (available >= 0) {
-      console.log(`Inventory is ${available}, no alert needed`);
+      console.log(`📋 [Handler] Inventory is ${available}, no alert needed (threshold: < 0)`);
       return;
     }
 
-    console.log(`⚠️  Negative stock detected: ${available} units`);
+    console.log(`⚠️  [Handler] NEGATIVE STOCK DETECTED: ${available} units`);
 
     // Fetch product and variant details
+    console.log('🔍 [Handler] Fetching product details for inventory item:', inventoryItemId);
     const productDetails = await getProductDetails(inventoryItemId);
     
     if (!productDetails) {
-      console.error('Could not fetch product details for inventory item:', inventoryItemId);
+      console.error('❌ [Handler] Could not fetch product details for inventory item:', inventoryItemId);
       return;
     }
+    
+    console.log('✅ [Handler] Product details fetched:', productDetails);
 
     // Fetch location name
+    console.log('🔍 [Handler] Fetching location name for location:', locationId);
     const locationName = await getLocationName(locationId);
+    console.log('✅ [Handler] Location name:', locationName);
 
     // Check if webhook contains order information
     // Note: inventory_levels/update webhook typically doesn't include order info
@@ -42,6 +50,7 @@ export async function handleInventoryUpdate(webhookData, shop) {
     }
 
     // Send Slack notification
+    console.log('📤 [Handler] Sending Slack notification...');
     await sendNegativeStockAlert({
       productTitle: productDetails.productTitle,
       variantTitle: productDetails.variantTitle,
@@ -52,7 +61,7 @@ export async function handleInventoryUpdate(webhookData, shop) {
       orderUrl: orderUrl,
     });
 
-    console.log('✅ Negative stock alert processed successfully');
+    console.log('✅ [Handler] Negative stock alert processed successfully');
   } catch (error) {
     console.error('Error handling inventory update:', error);
     throw error;

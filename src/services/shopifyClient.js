@@ -6,10 +6,13 @@ import fetch from 'node-fetch';
  * @returns {Promise<Object>} - Product and variant information
  */
 export async function getProductDetails(inventoryItemId) {
+  console.log('🔌 [Shopify API] Getting product details for inventory item:', inventoryItemId);
+  
   const storeDomain = process.env.SHOPIFY_STORE_DOMAIN;
   const accessToken = process.env.SHOPIFY_ADMIN_API_TOKEN;
 
   if (!storeDomain || !accessToken) {
+    console.error('❌ [Shopify API] Missing credentials');
     throw new Error('Shopify credentials not configured');
   }
 
@@ -36,35 +39,41 @@ export async function getProductDetails(inventoryItemId) {
       }
     `;
 
-    const response = await fetch(
-      `https://${storeDomain}/admin/api/2024-01/graphql.json`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Shopify-Access-Token': accessToken,
+    const apiUrl = `https://${storeDomain}/admin/api/2024-01/graphql.json`;
+    console.log('🔌 [Shopify API] Calling:', apiUrl);
+    console.log('🔌 [Shopify API] Query variables:', { id: `gid://shopify/InventoryItem/${inventoryItemId}` });
+
+    const response = await fetch(apiUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Shopify-Access-Token': accessToken,
+      },
+      body: JSON.stringify({
+        query,
+        variables: {
+          id: `gid://shopify/InventoryItem/${inventoryItemId}`,
         },
-        body: JSON.stringify({
-          query,
-          variables: {
-            id: `gid://shopify/InventoryItem/${inventoryItemId}`,
-          },
-        }),
-      }
-    );
+      }),
+    });
 
     const data = await response.json();
+    console.log('🔌 [Shopify API] Response status:', response.status);
+    console.log('🔌 [Shopify API] Response data:', JSON.stringify(data, null, 2));
 
     if (data.errors) {
-      console.error('GraphQL errors:', data.errors);
+      console.error('❌ [Shopify API] GraphQL errors:', data.errors);
       throw new Error('Failed to fetch product details from Shopify');
     }
 
     const inventoryItem = data.data?.inventoryItem;
     
     if (!inventoryItem || !inventoryItem.variant) {
+      console.warn('⚠️  [Shopify API] No inventory item or variant found');
       return null;
     }
+    
+    console.log('✅ [Shopify API] Product details retrieved successfully');
 
     const variant = inventoryItem.variant;
     const product = variant.product;
@@ -81,7 +90,7 @@ export async function getProductDetails(inventoryItemId) {
       variantPrice: variant.price,
     };
   } catch (error) {
-    console.error('Error fetching product details:', error);
+    console.error('❌ [Shopify API] Error fetching product details:', error.message);
     throw error;
   }
 }
@@ -92,10 +101,13 @@ export async function getProductDetails(inventoryItemId) {
  * @returns {Promise<string>} - Location name
  */
 export async function getLocationName(locationId) {
+  console.log('🔌 [Shopify API] Getting location name for:', locationId);
+  
   const storeDomain = process.env.SHOPIFY_STORE_DOMAIN;
   const accessToken = process.env.SHOPIFY_ADMIN_API_TOKEN;
 
   if (!storeDomain || !accessToken) {
+    console.error('❌ [Shopify API] Missing credentials');
     throw new Error('Shopify credentials not configured');
   }
 
@@ -109,33 +121,37 @@ export async function getLocationName(locationId) {
       }
     `;
 
-    const response = await fetch(
-      `https://${storeDomain}/admin/api/2024-01/graphql.json`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Shopify-Access-Token': accessToken,
+    const apiUrl = `https://${storeDomain}/admin/api/2024-01/graphql.json`;
+    console.log('🔌 [Shopify API] Calling:', apiUrl);
+
+    const response = await fetch(apiUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Shopify-Access-Token': accessToken,
+      },
+      body: JSON.stringify({
+        query,
+        variables: {
+          id: `gid://shopify/Location/${locationId}`,
         },
-        body: JSON.stringify({
-          query,
-          variables: {
-            id: `gid://shopify/Location/${locationId}`,
-          },
-        }),
-      }
-    );
+      }),
+    });
 
     const data = await response.json();
+    console.log('🔌 [Shopify API] Location response status:', response.status);
 
     if (data.errors) {
-      console.error('GraphQL errors:', data.errors);
+      console.error('❌ [Shopify API] GraphQL errors:', data.errors);
       return `Location ${locationId}`;
     }
 
-    return data.data?.location?.name || `Location ${locationId}`;
+    const locationName = data.data?.location?.name || `Location ${locationId}`;
+    console.log('✅ [Shopify API] Location name:', locationName);
+    
+    return locationName;
   } catch (error) {
-    console.error('Error fetching location name:', error);
+    console.error('❌ [Shopify API] Error fetching location name:', error.message);
     return `Location ${locationId}`;
   }
 }
