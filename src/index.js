@@ -10,11 +10,10 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Middleware to capture raw body for signature verification
-app.use(express.json({
-  verify: (req, res, buf) => {
-    req.rawBody = buf.toString('utf8');
-  }
-}));
+app.use('/webhooks', express.raw({ type: 'application/json' }));
+
+// Regular JSON parsing for other routes
+app.use(express.json());
 
 // Health check endpoint
 app.get('/', (req, res) => {
@@ -43,7 +42,9 @@ app.post('/webhooks/inventory-update', async (req, res) => {
       return res.status(401).send('Unauthorized: Missing signature');
     }
 
-    const isValid = verifyShopifyWebhook(req.rawBody, hmac);
+    // Get raw body as string for signature verification
+    const rawBody = req.body.toString('utf8');
+    const isValid = verifyShopifyWebhook(rawBody, hmac);
     
     if (!isValid) {
       console.error('Invalid webhook signature');
@@ -52,8 +53,11 @@ app.post('/webhooks/inventory-update', async (req, res) => {
 
     console.log(`Received webhook: ${topic} from ${shop}`);
 
+    // Parse JSON body
+    const webhookData = JSON.parse(rawBody);
+
     // Process the inventory update
-    await handleInventoryUpdate(req.body, shop);
+    await handleInventoryUpdate(webhookData, shop);
 
     // Respond quickly to Shopify
     res.status(200).send('OK');
